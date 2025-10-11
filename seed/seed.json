@@ -1,0 +1,80 @@
+{
+  "trivias": [
+    {
+      "id": "calculo-derivadas",
+      "curso": "Cálculo I",
+      "tema": "Derivadas básicas",
+      "num_preguntas": 5,
+      "tiempo_seg_por_preg": 25
+    },
+    {
+      "id": "algebra-matrices",
+      "curso": "Álgebra",
+      "tema": "Matrices",
+      "num_preguntas": 5,
+      "tiempo_seg_por_preg": 25
+    }
+  ],
+  "preguntas": [
+    {
+      "id": "p1",
+      "curso": "Cálculo I",
+      "tema": "Derivadas básicas",
+      "enunciado": "¿Cuál es la derivada de $x^2$?",
+      "opciones": {
+        "A": "2x",
+        "B": "x",
+        "C": "x^2",
+        "D": "2"
+      },
+      "correcta": "A",
+      "explicacion": "d/dx $x^2$ = 2x",
+      "dificultad": "Fácil"
+    },
+    {
+      "id": "p2",
+      "curso": "Álgebra",
+      "tema": "Matrices",
+      "enunciado": "Si A es 2x2 y B es 2x2, ¿se puede calcular AB?",
+      "opciones": {
+        "A": "Siempre",
+        "B": "Solo si A es invertible",
+        "C": "Sí, dimensiones compatibles",
+        "D": "Nunca"
+      },
+      "correcta": "C",
+      "explicacion": "(2x2)*(2x2) es válido.",
+      "dificultad": "Media"
+    },
+    {
+      "id": "p3",
+      "curso": "Física I",
+      "tema": "Cinemática",
+      "enunciado": "Unidad SI de la aceleración:",
+      "opciones": {
+        "A": "m/s",
+        "B": "m/s^2",
+        "C": "N",
+        "D": "J"
+      },
+      "correcta": "B",
+      "explicacion": "$a=\\Delta v/\\Delta t$",
+      "dificultad": "Fácil"
+    },
+    {
+      "id": "p4",
+      "curso": "Programación",
+      "tema": "Python básico",
+      "enunciado": "¿Qué imprime len([1,2,3])?",
+      "opciones": {
+        "A": "2",
+        "B": "3",
+        "C": "[1,2,3]",
+        "D": "Error"
+      },
+      "correcta": "B",
+      "explicacion": "Tres elementos → 3",
+      "dificultad": "Fácil"
+    }
+  ]
+}

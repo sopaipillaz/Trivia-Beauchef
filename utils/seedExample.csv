@@ -1,0 +1,4 @@
+curso,tema,enunciado,opcion_a,opcion_b,opcion_c,opcion_d,correcta,explicacion,dificultad
+Cálculo I,Derivadas básicas,¿Cuál es la derivada de $x^2$?,2x,x,x^2,2,A,"d/dx $x^2$ = 2x",Fácil
+Álgebra,Matrices,Si A es 2x2 y B es 2x2, ¿se puede calcular AB?,Siempre,Solo si A es invertible,Sí, dimensiones compatibles,Nunca,C,"(2x2)*(2x2) es válido.",Media
+Física I,Cinemática,Unidad SI de la aceleración:,m/s,m/s^2,N,J,B,"$a=\Delta v/\Delta t$",Fácil
