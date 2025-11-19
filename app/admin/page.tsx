@@ -248,7 +248,7 @@ export default function AdminPage() {
       opcionB: q.opciones?.B || '',
       opcionC: q.opciones?.C || '',
       opcionD: q.opciones?.D || '',
-      correcta: (q.correcta || 'A').toUpperCase(),
+      correcta: ((q.correcta || 'A').toUpperCase() as EditFormState['correcta']),
       explicacion: q.explicacion || '',
       dificultad: q.dificultad || '',
     });
