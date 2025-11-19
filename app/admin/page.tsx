@@ -39,6 +39,17 @@ type EditFormState = {
   dificultad: string;
 };
 
+type PreguntaDoc = {
+  id: string;
+  curso?: string;
+  tema?: string;
+  enunciado?: string;
+  opciones?: Record<'A'|'B'|'C'|'D', string>;
+  correcta?: string;
+  explicacion?: string;
+  dificultad?: string;
+};
+
 export default function AdminPage() {
   const { user, loading, signInGuest } = useAuth();
   const [pasted, setPasted] = useState('');
@@ -47,11 +58,11 @@ export default function AdminPage() {
   const [err, setErr] = useState<string>('');
   const [filterCurso, setFilterCurso] = useState('');
   const [filterTema, setFilterTema] = useState('');
-  const [filteredQuestions, setFilteredQuestions] = useState<any[]>([]);
+  const [filteredQuestions, setFilteredQuestions] = useState<PreguntaDoc[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [courseOptions, setCourseOptions] = useState<Record<string, string[]>>({});
   const [selectedQuestionId, setSelectedQuestionId] = useState('');
-  const [editingQuestion, setEditingQuestion] = useState<any | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<PreguntaDoc | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({
     enunciado: '',
     opcionA: '',
@@ -189,7 +200,10 @@ export default function AdminPage() {
         where('tema', '==', tema)
       );
       const snap = await getDocs(qRef);
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const docs: PreguntaDoc[] = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<PreguntaDoc, 'id'>),
+      }));
       setFilteredQuestions(docs);
       setSelectedQuestionId('');
       setEditingQuestion(null);
