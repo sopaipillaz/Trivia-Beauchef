@@ -19,10 +19,13 @@ export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props
   useEffect(() => {
     setRemaining(timeLimitSec || 20);
     setSelected(null);
+  }, [question?.id, timeLimitSec]);
+
+  useEffect(() => {
+    if (selected) return;
     const timer = setInterval(() => setRemaining((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(timer);
-    // 👇 usa optional chaining para evitar "cannot read id of undefined"
-  }, [question?.id, timeLimitSec]);
+  }, [question?.id, timeLimitSec, selected]);
 
   function choose(opt: 'A'|'B'|'C'|'D') {
     if (selected) return; // ya respondido

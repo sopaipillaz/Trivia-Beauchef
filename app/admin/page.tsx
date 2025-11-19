@@ -1,7 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Papa from 'papaparse';
-import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  serverTimestamp,
+  setDoc,
+  doc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../lib/AuthProvider';
 
@@ -21,6 +31,10 @@ export default function AdminPage() {
   const [pastedTrivias, setPastedTrivias] = useState('');
   const [status, setStatus] = useState<string>('');
   const [err, setErr] = useState<string>('');
+  const [filterCurso, setFilterCurso] = useState('');
+  const [filterTema, setFilterTema] = useState('');
+  const [filteredQuestions, setFilteredQuestions] = useState<any[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -84,6 +98,50 @@ export default function AdminPage() {
     }
   }
 
+  async function loadQuestionsByFilter() {
+    try {
+      setErr('');
+      setStatus('');
+      setLoadingQuestions(true);
+      if (!user) throw new Error('No hay sesión. Inicia como invitado o login.');
+      const curso = filterCurso.trim();
+      const tema = filterTema.trim();
+      if (!curso || !tema) {
+        throw new Error('Debes indicar curso y tema para filtrar.');
+      }
+      const qRef = query(
+        collection(db, 'preguntas'),
+        where('curso', '==', curso),
+        where('tema', '==', tema)
+      );
+      const snap = await getDocs(qRef);
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setFilteredQuestions(docs);
+      setStatus(`Encontradas ${docs.length} preguntas para ${curso} / ${tema}.`);
+    } catch (e: any) {
+      setErr(`Error al cargar preguntas: ${e?.message || e}`);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  }
+
+    async function handleDeleteQuestion(questionId: string) {
+    try {
+      if (!user) throw new Error('No hay sesion. Inicia como invitado o login.');
+      const confirmed = typeof window !== 'undefined'
+        ? window.confirm('Eliminar esta pregunta? Esta accion no se puede deshacer.')
+        : true;
+      if (!confirmed) return;
+      await deleteDoc(doc(db, 'preguntas', questionId));
+      setFilteredQuestions((prev) => prev.filter((q) => q.id !== questionId));
+      setStatus('Pregunta eliminada.');
+    } catch (e: any) {
+      setErr(`No se pudo eliminar: ${e?.message || e}`);
+    }
+  }
+
+
+
   if (loading) return <main><h2>Admin</h2><p>Conectando…</p></main>;
   if (!user) return (
     <main>
@@ -117,6 +175,53 @@ export default function AdminPage() {
         <div style={{ marginTop: 8, display:'flex', gap:8 }}>
           <button onClick={()=>parseAndUploadTrivias(pastedTrivias)} style={{ background:'#2563eb', color:'white', padding:'8px 12px', borderRadius:8 }}>Subir trivias</button>
           <CSVFileUploader onParsed={parseAndUploadTrivias} />
+        </div>
+      </section>
+
+      <section style={{ background:'#161b26', padding:16, borderRadius:12, marginTop:16 }}>
+        <h3>Eliminar preguntas existentes</h3>
+        <p><small>Filtra por curso y tema exactos para obtener la lista y borrar las que necesites.</small></p>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <input
+            value={filterCurso}
+            onChange={(e)=>setFilterCurso(e.target.value)}
+            placeholder="Curso (ej: MA1001)"
+            style={{ flex:1, minWidth:180, padding:'8px 10px', borderRadius:8, border:'1px solid #374151', background:'#0f172a', color:'#fff' }}
+          />
+          <input
+            value={filterTema}
+            onChange={(e)=>setFilterTema(e.target.value)}
+            placeholder="Tema (ej: Axiomas de Cuerpo)"
+            style={{ flex:1, minWidth:220, padding:'8px 10px', borderRadius:8, border:'1px solid #374151', background:'#0f172a', color:'#fff' }}
+          />
+          <button
+            onClick={loadQuestionsByFilter}
+            disabled={loadingQuestions}
+            style={{ background:'#2563eb', color:'#fff', padding:'8px 12px', borderRadius:8, minWidth:140 }}
+          >
+            {loadingQuestions ? 'Cargando...' : 'Buscar preguntas'}
+          </button>
+        </div>
+        <div style={{ marginTop:12, maxHeight:320, overflowY:'auto' }}>
+          {filteredQuestions.length === 0 && !loadingQuestions && (
+            <p style={{ opacity:0.8 }}>No hay preguntas cargadas para este filtro.</p>
+          )}
+          <ul style={{ listStyle:'none', padding:0, margin:0, display:'grid', gap:8 }}>
+            {filteredQuestions.map((q)=> (
+              <li key={q.id} style={{ background:'#111827', padding:12, borderRadius:10 }}>
+                <div style={{ fontWeight:600, marginBottom:4 }}>{q.enunciado}</div>
+                <div style={{ display:'flex', justifyContent:'space-between', gap:8, alignItems:'center' }}>
+                  <small style={{ opacity:0.7 }}>Correcta: {q.correcta}</small>
+                  <button
+                    onClick={()=>handleDeleteQuestion(q.id)}
+                    style={{ background:'#dc2626', color:'#fff', borderRadius:8, padding:'6px 10px' }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

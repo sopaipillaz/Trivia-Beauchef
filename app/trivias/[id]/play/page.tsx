@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '@/lib/AuthProvider';
 import QuestionCard from '@/components/QuestionCard';
+import MathText from '@/components/MathText';
 import { scoreQuestion } from '@/utils/scoring';
 
 type Trivia = {
@@ -22,6 +23,8 @@ type Trivia = {
   num_preguntas: number;
   tiempo_seg_por_preg: number;
 };
+
+type AdvanceState = { nextIndex: number; scoreAfter: number };
 
 export default function PlayPage({ params }: { params: { id: string } }) {
   const slug = decodeURIComponent(params.id); // ej: cálculo-i-derivadas-básicas
@@ -33,6 +36,9 @@ export default function PlayPage({ params }: { params: { id: string } }) {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>('');
+  const [pendingAdvance, setPendingAdvance] = useState<AdvanceState | null>(null);
+  const [pauseInfo, setPauseInfo] = useState<{ explanation: string; correct: string } | null>(null);
+  const [advancing, setAdvancing] = useState(false);
 
   // 1) Asegura sesión (invitado)
   useEffect(() => {
@@ -93,50 +99,67 @@ export default function PlayPage({ params }: { params: { id: string } }) {
   }, [authLoading, user, slug]);
 
   // 3) Manejo de respuesta y avance
- async function handleAnswer(letter: 'A' | 'B' | 'C' | 'D') {
-  try {
-    const q = questions[i];
-    const correct = (q.correcta || 'A').toUpperCase();
+  async function handleAnswer(letter: 'A' | 'B' | 'C' | 'D') {
+    try {
+      const q = questions[i];
+      const correct = (q.correcta || 'A').toUpperCase();
 
-    // Puntaje seguro: si viene algo raro, usamos 0
-    const raw = scoreQuestion({ correct, chosen: letter, timeLeft: 0 });
-    const gained = Number(raw);
-    const safeGained = Number.isFinite(gained) ? gained : 0;
+      const raw = scoreQuestion({ correct, chosen: letter, timeLeft: 0 });
+      const gained = Number(raw);
+      const safeGained = Number.isFinite(gained) ? gained : 0;
 
-    const nextIndex = i + 1;
+      const nextIndex = i + 1;
 
-    // guarda respuesta
-    await addDoc(collection(db, 'respuestas'), {
-      trivia_id: slug,
-      pregunta_id: q.id,
-      correcta: correct,
-      elegida: letter,
-      created_at: serverTimestamp(),
-      usuario_id: user?.uid || null,
-    });
-
-    // actualiza estado (usamos función para no perder el valor real)
-    let nextScoreVal = 0;
-    setScore(prev => {
-      nextScoreVal = prev + safeGained;
-      return nextScoreVal;
-    });
-    setI(nextIndex);
-
-    // si terminó, guarda partida con el valor calculado
-    if (nextIndex >= questions.length) {
-      await addDoc(collection(db, 'partidas'), {
+      await addDoc(collection(db, 'respuestas'), {
         trivia_id: slug,
-        puntaje: nextScoreVal,
-        total: questions.length,
+        pregunta_id: q.id,
+        correcta: correct,
+        elegida: letter,
         created_at: serverTimestamp(),
         usuario_id: user?.uid || null,
       });
+
+      const nextScoreVal = score + safeGained;
+      setScore(nextScoreVal);
+
+      const advanceState: AdvanceState = { nextIndex, scoreAfter: nextScoreVal };
+      setPendingAdvance(advanceState);
+
+      if (correct !== letter) {
+        const explanation = (q.explicacion || '').trim() || `Respuesta correcta: ${correct}`;
+        setPauseInfo({ explanation, correct });
+        return;
+      }
+
+      await advanceToNext(advanceState);
+    } catch (e) {
+      console.error('[play] save error', e);
     }
-  } catch (e) {
-    console.error('[play] save error', e);
   }
-}
+
+  async function advanceToNext(advance?: AdvanceState) {
+    const data = advance || pendingAdvance;
+    if (!data) return;
+    setAdvancing(true);
+    setPendingAdvance(null);
+    setPauseInfo(null);
+    setI(data.nextIndex);
+    try {
+      if (data.nextIndex >= questions.length) {
+        await addDoc(collection(db, 'partidas'), {
+          trivia_id: slug,
+          puntaje: data.scoreAfter,
+          total: questions.length,
+          created_at: serverTimestamp(),
+          usuario_id: user?.uid || null,
+        });
+      }
+    } catch (e) {
+      console.error('[play] partida save error', e);
+    } finally {
+      setAdvancing(false);
+    }
+  }
 
   // ===================== UI =====================
 
@@ -196,6 +219,30 @@ export default function PlayPage({ params }: { params: { id: string } }) {
         onAnswer={handleAnswer}
         timeLimitSec={trivia.tiempo_seg_por_preg}
       />
+
+      {pauseInfo && (
+        <section style={{ marginTop: 16, background: '#1f2937', padding: 16, borderRadius: 12 }}>
+          <h4 style={{ marginTop: 0 }}>Revisa la pauta</h4>
+          <p style={{ color: '#a7f3d0' }}>
+            <MathText text={pauseInfo.explanation} />
+          </p>
+          <p style={{ opacity: 0.8 }}>Presiona continuar cuando quieras pasar a la siguiente pregunta.</p>
+          <button
+            onClick={() => advanceToNext()}
+            disabled={advancing}
+            style={{
+              marginTop: 8,
+              background: '#2563eb',
+              color: '#fff',
+              padding: '10px 16px',
+              borderRadius: 8,
+              cursor: advancing ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {advancing ? 'Guardando...' : 'Siguiente pregunta'}
+          </button>
+        </section>
+      )}
     </main>
   );
 }
