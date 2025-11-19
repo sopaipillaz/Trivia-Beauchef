@@ -49,7 +49,37 @@ export default function Page() {
 
   return (
     <main>
-      <p>Bienvenido{user ? `, ${user.isAnonymous ? 'Invitado' : user.email}` : ''}. Elige una trivia para jugar.</p>
+      <section style={{ background: 'linear-gradient(135deg, #0ea5e9, #22d3ee)', color: '#031223', borderRadius: 18, padding: '32px 28px', marginBottom: 32 }}>
+        <h1 style={{ margin: '0 0 12px', fontSize: 36, lineHeight: 1.1 }}>Trivia Beauchef</h1>
+        <p style={{ margin: '0 0 20px', fontSize: 18 }}>Pon a prueba tus conocimientos de ingeniería, compite con tus compañeros y mejora cada día.</p>
+        <button
+          onClick={() => {
+            const first = trivias[0];
+            if (first) window.location.href = `/trivias/${first.id}/play`;
+          }}
+          style={{
+            fontSize: 18,
+            padding: '14px 28px',
+            borderRadius: 999,
+            border: 'none',
+            background: '#031223',
+            color: '#e0f2fe',
+            cursor: 'pointer',
+          }}
+        >
+          Comenzar trivia
+        </button>
+      </section>
+
+      <section aria-label="Introducción" style={{ marginBottom: 24 }}>
+        <p style={{ margin: '0 0 8px', fontSize: 16 }}>
+          Bienvenido{user ? `, ${user.isAnonymous ? 'Invitado' : user.email}` : ''}. Desde tu móvil o computador podrás responder sesiones personalizadas, seguir tu progreso y retar a tus amigos.
+        </p>
+        <p style={{ margin: 0, fontSize: 16, color: '#93c5fd' }}>
+          Contestarás 10 preguntas por sesión, con límite sugerido según la trivia elegida. ¡Comienza cuando estés listo!
+        </p>
+      </section>
+
       <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 12 }}>
         {Object.entries(grouped).map(([curso, list]) => (
           <li key={curso} style={{ background: '#0f172a', borderRadius: 12, padding: 12 }}>
@@ -93,6 +123,22 @@ export default function Page() {
           </li>
         ))}
       </ul>
+
+      <section id="como-funciona" style={{ marginTop: 40, background: '#0f172a', padding: 24, borderRadius: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Cómo funciona</h2>
+        <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
+          <li>Elige una trivia recomendada para tu curso.</li>
+          <li>Recibe preguntas adaptadas y revisa tu puntaje final.</li>
+          <li>Comparte tu resultado y sube en el ranking global.</li>
+        </ol>
+        <p style={{ margin: '12px 0 0' }}>Creado por estudiantes de Beauchef para entrenar competencias clave de los primeros años de ingeniería.</p>
+      </section>
+
+      <section style={{ marginTop: 24, padding: 24, borderRadius: 16, border: '1px solid #1f2937', background: '#0b1220' }}>
+        <h3 style={{ marginTop: 0 }}>Acerca de Trivia Beauchef</h3>
+        <p style={{ marginBottom: 8 }}>Este proyecto busca que los mechones repasen conceptos esenciales de cálculo y álgebra en un ambiente competitivo y entretenido.</p>
+        <p style={{ marginBottom: 0 }}>¿Sugerencias? Escríbenos a <a href="mailto:contacto@triviabeauchef.cl" style={{ color: '#38bdf8' }}>contacto@triviabeauchef.cl</a>.</p>
+      </section>
     </main>
   );
 }

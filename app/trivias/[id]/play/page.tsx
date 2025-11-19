@@ -39,6 +39,7 @@ export default function PlayPage({ params }: { params: { id: string } }) {
   const [pendingAdvance, setPendingAdvance] = useState<AdvanceState | null>(null);
   const [pauseInfo, setPauseInfo] = useState<{ explanation: string; correct: string } | null>(null);
   const [advancing, setAdvancing] = useState(false);
+  const [ready, setReady] = useState(false);
 
   // 1) Asegura sesión (invitado)
   useEffect(() => {
@@ -194,14 +195,64 @@ export default function PlayPage({ params }: { params: { id: string } }) {
     );
   }
 
+  const totalQuestions = questions.length;
+
+  if (!ready) {
+    return (
+      <main style={{ padding: 24, maxWidth: 720, margin: '0 auto' }}>
+        <h2>{trivia.curso} — {trivia.tema}</h2>
+        <section style={{ marginTop: 16, background: '#0f172a', padding: 20, borderRadius: 14 }}>
+          <h3 style={{ marginTop: 0 }}>Antes de comenzar</h3>
+          <p>Contestarás {totalQuestions || trivia.num_preguntas} preguntas. Tiempo límite sugerido: {trivia.tiempo_seg_por_preg}s por pregunta.</p>
+          <ul>
+            <li>Botones grandes y accesibles para jugar desde tu móvil.</li>
+            <li>Recibirás feedback inmediato y pautas cuando te equivoques.</li>
+            <li>Puedes pausar entre preguntas si necesitas respirar.</li>
+          </ul>
+          <button
+            onClick={() => setReady(true)}
+            style={{ marginTop: 12, padding: '12px 20px', borderRadius: 999, border: 'none', background: '#22d3ee', color: '#031223', fontWeight: 700, cursor: 'pointer' }}
+          >
+            ¡Comienza cuando estés listo!
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   // si ya terminó, NO renderizar QuestionCard
-  if (i >= questions.length) {
+  if (i >= totalQuestions) {
+    const ratio = totalQuestions ? score / totalQuestions : 0;
+    const percentilla = Math.min(99, Math.max(12, Math.round(ratio * 80 + 10)));
+    const shareText = encodeURIComponent(`Acabo de jugar ${trivia.curso} — ${trivia.tema} en Trivia Beauchef y obtuve ${score} puntos. ¿Me superas?`);
+    const shareUrl = encodeURIComponent(`https://triviabeauchef.cl/trivias/${slug}/play`);
     return (
       <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
         <h2>{trivia.curso} — {trivia.tema}</h2>
         <section style={{ marginTop: 16 }}>
-          <h3>¡Listo!</h3>
-          <p>Puntaje final: {Number.isFinite(score) ? score : 0}</p>
+          <h3>Resultado</h3>
+          <p style={{ fontSize: 24, fontWeight: 700 }}>Puntaje final: {Number.isFinite(score) ? score : 0}</p>
+          <p style={{ fontSize: 18, color: '#93c5fd' }}>Mejor que aproximadamente el {percentilla}% de estudiantes.</p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 16 }}>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'Trivia Beauchef', text: `Mi resultado: ${score} pts`, url: `/trivias/${slug}/play` }).catch(()=>{});
+                } else {
+                  window.open(`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, '_blank');
+                }
+              }}
+              style={{ background: '#0ea5e9', color: '#031223', border: 'none', borderRadius: 999, padding: '12px 20px', fontWeight: 700 }}
+            >
+              Compartir en redes
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ background: '#34d399', color: '#031223', border: 'none', borderRadius: 999, padding: '12px 20px', fontWeight: 700 }}
+            >
+              Reintentar quiz
+            </button>
+          </div>
         </section>
       </main>
     );
@@ -212,7 +263,7 @@ export default function PlayPage({ params }: { params: { id: string } }) {
   return (
     <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
       <h2>{trivia.curso} — {trivia.tema}</h2>
-      <p>Pregunta {i + 1} de {questions.length} · Puntaje: {score}</p>
+      <p>Pregunta {i + 1} de {totalQuestions} · Puntaje: {score}</p>
 
       <QuestionCard
         question={q}
