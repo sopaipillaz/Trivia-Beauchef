@@ -29,6 +29,8 @@ type TriviaRow = {
 };
 
 type EditFormState = {
+  curso: string;
+  tema: string;
   enunciado: string;
   opcionA: string;
   opcionB: string;
@@ -64,6 +66,8 @@ export default function AdminPage() {
   const [selectedQuestionId, setSelectedQuestionId] = useState('');
   const [editingQuestion, setEditingQuestion] = useState<PreguntaDoc | null>(null);
   const [editForm, setEditForm] = useState<EditFormState>({
+    curso: '',
+    tema: '',
     enunciado: '',
     opcionA: '',
     opcionB: '',
@@ -243,6 +247,8 @@ export default function AdminPage() {
     setSelectedQuestionId(questionId);
     setEditingQuestion(q);
     setEditForm({
+      curso: q.curso || '',
+      tema: q.tema || '',
       enunciado: q.enunciado || '',
       opcionA: q.opciones?.A || '',
       opcionB: q.opciones?.B || '',
@@ -262,7 +268,14 @@ export default function AdminPage() {
     if (!editingQuestion) return;
     try {
       setSavingQuestion(true);
+      const updatedCurso = editForm.curso.trim();
+      const updatedTema = editForm.tema.trim();
+      if (!updatedCurso || !updatedTema) {
+        throw new Error('Curso y tema no pueden estar vacíos.');
+      }
       const payload = {
+        curso: updatedCurso,
+        tema: updatedTema,
         enunciado: editForm.enunciado.trim(),
         opciones: {
           A: editForm.opcionA,
@@ -275,11 +288,17 @@ export default function AdminPage() {
         dificultad: editForm.dificultad,
       };
       await updateDoc(doc(db, 'preguntas', editingQuestion.id), payload);
-      setFilteredQuestions((prev) =>
-        prev.map((q) => q.id === editingQuestion.id ? { ...q, ...payload } : q)
-      );
-      setEditingQuestion((prev) => prev ? { ...prev, ...payload } : null);
-      setStatus('Pregunta actualizada.');
+      setFilteredQuestions((prev) => {
+        return prev
+          .map((q) => q.id === editingQuestion.id ? { ...q, ...payload } : q)
+          .filter((q) => q.curso === filterCurso.trim() && q.tema === filterTema.trim());
+      });
+      const stillVisible = payload.curso === filterCurso.trim() && payload.tema === filterTema.trim();
+      setEditingQuestion(stillVisible ? { ...editingQuestion, ...payload } : null);
+      if (!stillVisible) {
+        setSelectedQuestionId('');
+      }
+      setStatus(stillVisible ? 'Pregunta actualizada.' : 'Pregunta movida a otra carpeta.');
     } catch (e: any) {
       setErr(`No se pudo actualizar la pregunta: ${e?.message || e}`);
     } finally {
@@ -544,6 +563,24 @@ export default function AdminPage() {
         {editingQuestion && (
           <div style={{ marginTop:12, background:'#0b1120', padding:16, borderRadius:10 }}>
             <h4 style={{ marginTop:0 }}>Editar pregunta seleccionada</h4>
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+              <div style={{ flex:1, minWidth:180 }}>
+                <label>Curso</label>
+                <input
+                  value={editForm.curso}
+                  onChange={(e)=>handleEditFormChange('curso', e.target.value)}
+                  style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1px solid #374151', background:'#111827', color:'#fff' }}
+                />
+              </div>
+              <div style={{ flex:1, minWidth:200 }}>
+                <label>Tema</label>
+                <input
+                  value={editForm.tema}
+                  onChange={(e)=>handleEditFormChange('tema', e.target.value)}
+                  style={{ width:'100%', padding:'8px 10px', borderRadius:8, border:'1px solid #374151', background:'#111827', color:'#fff' }}
+                />
+              </div>
+            </div>
             <textarea
               value={editForm.enunciado}
               onChange={(e)=>handleEditFormChange('enunciado', e.target.value)}
