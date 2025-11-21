@@ -11,6 +11,7 @@ type Props = {
 export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props) {
   const [remaining, setRemaining] = useState<number>(timeLimitSec || 20);
   const [selected, setSelected] = useState<'A'|'B'|'C'|'D'|null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   // Si no hay pregunta, no renderizamos nada
   if (!question) return null;
@@ -19,6 +20,7 @@ export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props
   useEffect(() => {
     setRemaining(timeLimitSec || 20);
     setSelected(null);
+    setIsCorrect(null);
   }, [question?.id, timeLimitSec]);
 
   useEffect(() => {
@@ -30,6 +32,8 @@ export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props
   function choose(opt: 'A'|'B'|'C'|'D') {
     if (selected) return; // ya respondido
     setSelected(opt);
+    const correct = String(question?.correcta || '').toUpperCase();
+    setIsCorrect(opt === correct);
     onAnswer(opt);
   }
 
@@ -50,7 +54,11 @@ export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props
               style={{
                 width:'100%', textAlign:'left', padding:'10px 12px',
                 borderRadius:10, border:'1px solid #374151',
-                background: selected===k ? '#2563eb' : '#1f2937',
+                background: selected===k
+                  ? isCorrect
+                    ? '#22c55e'
+                    : '#dc2626'
+                  : '#1f2937',
                 color: 'white', cursor: selected ? 'default' : 'pointer'
               }}
             >
