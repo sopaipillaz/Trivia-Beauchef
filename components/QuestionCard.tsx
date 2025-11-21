@@ -69,11 +69,6 @@ export default function QuestionCard({ question, onAnswer, timeLimitSec }: Props
       </ul>
 
       <div style={{ marginTop:8, opacity:0.8 }}>⏱️ {remaining}s</div>
-      {selected && question.explicacion && (
-        <p style={{ marginTop:12, color:'#a7f3d0' }}>
-          <MathText text={question.explicacion} />
-        </p>
-      )}
     </section>
   );
 }
